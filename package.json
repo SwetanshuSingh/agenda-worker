@@ -1,0 +1,27 @@
+{
+  "name": "agenda-worker",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "start": "bun run dist/index.js"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prisma": "^6.4.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "@types/agenda": "^4.1.4",
+    "agenda": "^5.0.0",
+    "date-fns": "^4.1.0",
+    "googleapis": "^146.0.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0",
+    "zipcode-city-distance": "^1.0.6"
+  }
+}
