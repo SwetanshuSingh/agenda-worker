@@ -129,6 +129,6 @@ agenda.define("set-events-in-calendar", async (job: Job) => {
   logger.info("Service Worker Started!");
   // await agenda.now("get-artist-events", {});
   // await agenda.now("set-events-in-calendar", {});
-  await agenda.every("every 1 week", "get-artist-events", {});
-  await agenda.schedule("every 1 week", "set-events-in-calendar", {});
+  await agenda.every("0 9 * * 1", "get-artist-events"); // Runs every Monday at 9 AM UTC
+  await agenda.every("0 9 * * 1", "set-events-in-calendar"); // Runs every Monday at 9 AM UTC
 })();
