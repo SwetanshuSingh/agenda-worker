@@ -1,21 +1,21 @@
 {
   "name": "agenda-worker",
   "module": "index.ts",
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir dist --target node",
-    "start": "bun run dist/index.js"
+    "build": "rm -rf dist && tsc",
+    "start": "node dist/index.js"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "prisma": "^6.4.1"
+    "prisma": "6.4.1"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.8.2"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "6.4.1",
     "@types/agenda": "^4.1.4",
     "agenda": "^5.0.0",
     "date-fns": "^4.1.0",

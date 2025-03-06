@@ -1,26 +1,26 @@
-FROM oven/bun:1.0 AS builder
+FROM node:18-slim AS builder
 
 WORKDIR /app
 
 # Copy package files for dependency installation
-COPY package.json bun.lockb ./
+COPY package.json package-lock.json* ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies including dev dependencies
+RUN npm ci
 
-# Copy only necessary files for build
+# Copy project files
 COPY prisma ./prisma/
 COPY src ./src/
 COPY tsconfig.json ./
 
 # Generate Prisma client
-RUN bunx prisma generate
+RUN npx prisma generate
 
-# Build the application
-RUN bun run build
+# Build the TypeScript application
+RUN npm run build
 
 # Production stage
-FROM oven/bun:1.0-slim AS production
+FROM node:18-slim AS production
 
 WORKDIR /app
 
@@ -28,8 +28,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy package files for production dependencies only
-COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile --production
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev
 
 # Copy Prisma schema and generated client (needed for runtime)
 COPY --from=builder /app/prisma/schema.prisma ./prisma/
@@ -39,4 +39,4 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 
 # Run the application
-CMD ["bun", "start"] 
+CMD ["node", "dist/index.js"] 
