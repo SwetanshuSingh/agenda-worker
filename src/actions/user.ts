@@ -1,7 +1,8 @@
-import { prisma } from "../lib/db";
 import { getConcertCalendarId } from "../utils/fetch-concert-calendar-id";
 import { getGoogleAccessToken } from "../utils/fetch-google-access-token";
 import { google } from "googleapis";
+import { logger } from "../utils/winston-logger";
+import { prisma } from "../lib/db";
 // @ts-ignore
 import zippy from "zipcode-city-distance";
 
@@ -15,11 +16,16 @@ export const createEvent = async ({
   zipcode: string | null;
 }) => {
   try {
+    logger.info(`Processing events for user | UserID: ${id} | Email: ${email} | Zipcode: ${zipcode}`);
+    
     const token = await getGoogleAccessToken(id);
 
-    console.log("Google Access Token", token);
-
-    if (!token) return;
+    if (!token) {
+      logger.warn(`Failed to get Google access token for user | UserID: ${id}`);
+      return;
+    }
+    
+    logger.info(`Successfully obtained Google access token for user | UserID: ${id}`);
 
     const config = new google.auth.OAuth2();
     config.setCredentials({ access_token: token });
@@ -38,8 +44,14 @@ export const createEvent = async ({
     if (
       !userArtists?.followingArtists ||
       userArtists.followingArtists.length == 0
-    )
+    ) {
+      logger.warn(`No following artists found for user | UserID: ${id} | Email: ${email}`);
       return;
+    }
+
+    logger.info(`Found ${userArtists.followingArtists.length} followed artists for user | UserID: ${id}`);
+    const artistIds = userArtists.followingArtists.map(data => data.artistId);
+    logger.info(`Artist IDs followed by user: ${artistIds.join(', ')} | UserID: ${id}`);
 
     const zipcodesInUsersRange = zippy.getRadius(
       zipcode,
@@ -47,7 +59,7 @@ export const createEvent = async ({
       "M"
     );
 
-    console.log(zipcodesInUsersRange);
+    logger.info(`Found ${zipcodesInUsersRange.length} zipcodes in range for user | UserID: ${id} | Zipcode: ${zipcode}`);
 
     const events = await prisma.event.findMany({
       where: {
@@ -64,9 +76,17 @@ export const createEvent = async ({
       take: 2,
     });
 
-    console.log("Events for the artists", events);
+    if (events.length == 0) {
+      logger.warn(`No events found for user's followed artists | UserID: ${id}`);
+      return;
+    }
 
-    if (events.length == 0) return;
+    logger.info(`Found ${events.length} events for user | UserID: ${id}`);
+    
+    // Log event details
+    events.forEach((event, index) => {
+      logger.info(`Event ${index+1} details | Title: ${event.title} | ArtistID: ${event.artistId} | UserID: ${id} | Venue: ${event.venue}`);
+    });
 
     const calendarData = events.map((event) => {
       return {
@@ -88,15 +108,20 @@ export const createEvent = async ({
 
     const calendarId = await getConcertCalendarId(calendar);
 
-    if (!calendarId) return;
+    if (!calendarId) {
+      logger.warn(`Failed to get calendar ID for user | UserID: ${id}`);
+      return;
+    }
 
+    logger.info(`Adding ${calendarData.length} events to calendar for user | UserID: ${id} | CalendarID: ${calendarId}`);
+    
     const response = await calendar.events.insert({
       calendarId: calendarId,
       requestBody: calendarData[0],
     });
 
-    console.log(response);
+    logger.info(`Successfully added event to calendar | UserID: ${id} | EventTitle: ${calendarData[0].summary} | Status: ${response.status}`);
   } catch (error) {
-    console.log(error);
+    logger.error(`Error creating events for user | UserID: ${id} | Error: ${error}`);
   }
 };

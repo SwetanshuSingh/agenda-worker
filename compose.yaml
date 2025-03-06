@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  agenda-worker:
+    image: 136644268467.dkr.ecr.us-west-2.amazonaws.com/agenda-worker:latest
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 
